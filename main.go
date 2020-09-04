@@ -33,7 +33,7 @@ type Config struct {
 	DebugMode        bool   `env:"is_debug_mode,opt[true,false]"`
 	StackID          string `env:"BITRISEIO_STACK_ID"`
 	BuildSlug        string `env:"BITRISE_BUILD_SLUG"`
-	UseFastArchive   string `env:"is_debug_mode,opt[true,false]"`
+	UseFastArchive   string `env:"use_fast_archive,opt[true,false]"`
 }
 
 func (l *MultiLevelLogger) Verbose(v ...interface{}) {
