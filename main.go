@@ -245,7 +245,7 @@ func main() {
     	}
 
 	    fmt.Println()
-        log.Infof("Extracting cache archive using fast archive on: ", cacheReader)
+        log.Infof("Extracting cache archive using fast archive...")
 
         var inputFile *os.File
 		if pth != "" {
@@ -258,6 +258,11 @@ func main() {
 			inputFile = os.Stdin
 		}
 
+		fileInfo, err := inputFile.Stat()
+        if !err {
+            log.Infof("Fast archive found with name: %s, size: %d", fileInfo.name(), fileInfo.Size())
+        }
+
         unarchiver := falib.NewUnarchiver(inputFile)
 		unarchiver.Logger = &MultiLevelLogger{syslog.New(os.Stderr, "", 0), false}
 		unarchiver.IgnorePerms = false
@@ -267,6 +272,7 @@ func main() {
         if err != nil {
         	failf("Fatal error in archiver:", err.Error())
         }
+
         inputFile.Close()
 	} else {
 	    // Use Tar Archive
