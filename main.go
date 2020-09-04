@@ -10,27 +10,44 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	syslog "log"
 	"time"
 
 	"github.com/bitrise-io/go-steputils/stepconf"
 	"github.com/bitrise-io/go-utils/log"
+	"github.com/hendych/fast-archiver/falib"
 )
 
 const (
 	stepID = "cache-pull"
 )
 
+type MultiLevelLogger struct {
+	logger  *syslog.Logger
+	verbose bool
+}
+
 // Config stores the step inputs.
 type Config struct {
-	CacheAPIURL string `env:"cache_api_url"`
-	DebugMode   bool   `env:"is_debug_mode,opt[true,false]"`
-	StackID     string `env:"BITRISEIO_STACK_ID"`
-	BuildSlug   string `env:"BITRISE_BUILD_SLUG"`
+	CacheAPIURL      string `env:"cache_api_url"`
+	DebugMode        bool   `env:"is_debug_mode,opt[true,false]"`
+	StackID          string `env:"BITRISEIO_STACK_ID"`
+	BuildSlug        string `env:"BITRISE_BUILD_SLUG"`
+	UseFastArchive   string `env:"is_debug_mode,opt[true,false]"`
+}
+
+func (l *MultiLevelLogger) Verbose(v ...interface{}) {
+	if l.verbose {
+		l.logger.Println(v...)
+	}
+}
+func (l *MultiLevelLogger) Warning(v ...interface{}) {
+	l.logger.Println(v...)
 }
 
 // downloadCacheArchive downloads the cache archive and returns the downloaded file's path.
 // If the URI points to a local file it returns the local paths.
-func downloadCacheArchive(url string, buildSlug string) (string, error) {
+func downloadCacheArchive(url string, buildSlug string, use_fast_archive bool) (string, error) {
 	if strings.HasPrefix(url, "file://") {
 		return strings.TrimPrefix(url, "file://"), nil
 	}
@@ -55,7 +72,11 @@ func downloadCacheArchive(url string, buildSlug string) (string, error) {
 		return "", fmt.Errorf("non success response code: %d, body: %s", resp.StatusCode, string(responseBytes))
 	}
 
-	const cacheArchivePath = "/tmp/cache-archive.tar"
+    cacheArchivePath := "/tmp/cache-archive.tar"
+    if use_fast_archive {
+        cacheArchivePath = "/tmp/cache-archive.fast-archive"
+    }
+
 	f, err := os.Create(cacheArchivePath)
 	if err != nil {
 		return "", fmt.Errorf("failed to open the local cache file for write: %s", err)
@@ -187,11 +208,13 @@ func main() {
 
 		pth := strings.TrimPrefix(conf.CacheAPIURL, "file://")
 
-		var err error
-		cacheReader, err = os.Open(pth)
-		if err != nil {
-			failf("Failed to open cache archive file: %s", err)
-		}
+        if conf.UseFastArchive == "false" {
+    		var err error
+    		cacheReader, err = os.Open(pth)
+    		if err != nil {
+    			failf("Failed to open cache archive file: %s", err)
+    		}
+        }
 	} else {
 		fmt.Println()
 		log.Infof("Downloading remote cache archive")
@@ -202,76 +225,116 @@ func main() {
 		}
 		cacheURI = downloadURL
 
-		cacheReader, err = performRequest(downloadURL)
-		if err != nil {
-			failf("Failed to perform cache download request: %s", err)
-		}
+        if conf.UseFastArchive == "false" {
+    		cacheReader, err = performRequest(downloadURL)
+    		if err != nil {
+    			failf("Failed to perform cache download request: %s", err)
+    		}
+        }
 	}
 
-	cacheRecorderReader := NewRestoreReader(cacheReader)
+	if conf.UseFastArchive == "true" {
+	    // Use Fast Archive
 
-	currentStackID := strings.TrimSpace(conf.StackID)
-	if len(currentStackID) > 0 {
-		fmt.Println()
-		log.Infof("Checking archive and current stacks")
-		log.Printf("current stack id: %s", currentStackID)
+	    fmt.Println()
+        log.Infof("Downloading cache fast archive...")
 
-		r, hdr, err := readFirstEntry(cacheRecorderReader)
-		if err != nil {
-			failf("Failed to get first archive entry: %s", err)
-		}
+    	pth, err := downloadCacheArchive(cacheURI, conf.BuildSlug, conf.UseFastArchive == "true")
+    	if err != nil {
+    		failf("Unable to download cache fast archive: %s", err)
+    	}
 
-		cacheRecorderReader.Restore()
+	    fmt.Println()
+        log.Infof("Extracting cache archive using fast archive on: ", cacheReader)
 
-		if filepath.Base(hdr.Name) == "archive_info.json" {
-			b, err := ioutil.ReadAll(r)
+        var inputFile *os.File
+		if pth != "" {
+			file, err := os.Open(pth)
 			if err != nil {
-				failf("Failed to read first archive entry: %s", err)
+				failf("Error opening input file:", err.Error())
 			}
-
-			archiveStackID, err := parseStackID(b)
-			if err != nil {
-				failf("Failed to parse first archive entry: %s", err)
-			}
-			log.Printf("archive stack id: %s", archiveStackID)
-
-			if archiveStackID != currentStackID {
-				log.Warnf("Cache was created on stack: %s, current stack: %s", archiveStackID, currentStackID)
-				log.Warnf("Skipping cache pull, because of the stack has changed")
-				os.Exit(0)
-			}
+			inputFile = file
 		} else {
-			log.Warnf("cache archive does not contain stack information, skipping stack check")
-		}
-	}
-
-	fmt.Println()
-	log.Infof("Extracting cache archive")
-
-	if err := extractCacheArchive(cacheRecorderReader); err != nil {
-		log.Warnf("Failed to uncompress cache archive stream: %s", err)
-		log.Warnf("Downloading the archive file and trying to uncompress using tar tool")
-		data := map[string]interface{}{
-			"archive_bytes_read": cacheRecorderReader.BytesRead,
-			"build_slug":         conf.BuildSlug,
-		}
-		log.RInfof(stepID, "cache_archive_fallback", data, "Failed to uncompress cache archive stream: %s", err)
-
-		pth, err := downloadCacheArchive(cacheURI, conf.BuildSlug)
-		if err != nil {
-			failf("Fallback failed, unable to download cache archive: %s", err)
+			inputFile = os.Stdin
 		}
 
-		if err := uncompressArchive(pth); err != nil {
-			failf("Fallback failed, unable to uncompress cache archive file: %s", err)
-		}
+        unarchiver := falib.NewUnarchiver(inputFile)
+		unarchiver.Logger = &MultiLevelLogger{syslog.New(os.Stderr, "", 0), false}
+		unarchiver.IgnorePerms = false
+		unarchiver.IgnoreOwners = false
+		unarchiver.DryRun = false
+		err = unarchiver.Run()
+        if err != nil {
+        	failf("Fatal error in archiver:", err.Error())
+        }
+        inputFile.Close()
 	} else {
-		data := map[string]interface{}{
-			"cache_archive_size": cacheRecorderReader.BytesRead,
-			"build_slug":         conf.BuildSlug,
-		}
-		log.Debugf("Size of extracted cache archive: %d Bytes", cacheRecorderReader.BytesRead)
-		log.RInfof(stepID, "cache_archive_size", data, "Size of extracted cache archive: %d Bytes", cacheRecorderReader.BytesRead)
+	    // Use Tar Archive
+
+	    cacheRecorderReader := NewRestoreReader(cacheReader)
+    	currentStackID := strings.TrimSpace(conf.StackID)
+    	if len(currentStackID) > 0 {
+    		fmt.Println()
+    		log.Infof("Checking archive and current stacks")
+    		log.Printf("current stack id: %s", currentStackID)
+
+    		r, hdr, err := readFirstEntry(cacheRecorderReader)
+    		if err != nil {
+    			failf("Failed to get first archive entry: %s", err)
+    		}
+
+    		cacheRecorderReader.Restore()
+
+    		if filepath.Base(hdr.Name) == "archive_info.json" {
+    			b, err := ioutil.ReadAll(r)
+    			if err != nil {
+    				failf("Failed to read first archive entry: %s", err)
+    			}
+
+    			archiveStackID, err := parseStackID(b)
+    			if err != nil {
+    				failf("Failed to parse first archive entry: %s", err)
+    			}
+    			log.Printf("archive stack id: %s", archiveStackID)
+
+    			if archiveStackID != currentStackID {
+    				log.Warnf("Cache was created on stack: %s, current stack: %s", archiveStackID, currentStackID)
+    				log.Warnf("Skipping cache pull, because of the stack has changed")
+    				os.Exit(0)
+    			}
+    		} else {
+    			log.Warnf("cache archive does not contain stack information, skipping stack check")
+    		}
+    	}
+
+    	fmt.Println()
+    	log.Infof("Extracting cache archive")
+
+    	if err := extractCacheArchive(cacheRecorderReader); err != nil {
+    		log.Warnf("Failed to uncompress cache archive stream: %s", err)
+    		log.Warnf("Downloading the archive file and trying to uncompress using tar tool")
+    		data := map[string]interface{}{
+    			"archive_bytes_read": cacheRecorderReader.BytesRead,
+    			"build_slug":         conf.BuildSlug,
+    		}
+    		log.RInfof(stepID, "cache_archive_fallback", data, "Failed to uncompress cache archive stream: %s", err)
+
+    		pth, err := downloadCacheArchive(cacheURI, conf.BuildSlug, conf.UseFastArchive == "true")
+    		if err != nil {
+    			failf("Fallback failed, unable to download cache archive: %s", err)
+    		}
+
+    		if err := uncompressArchive(pth); err != nil {
+    			failf("Fallback failed, unable to uncompress cache archive file: %s", err)
+    		}
+    	} else {
+    		data := map[string]interface{}{
+    			"cache_archive_size": cacheRecorderReader.BytesRead,
+    			"build_slug":         conf.BuildSlug,
+    		}
+    		log.Debugf("Size of extracted cache archive: %d Bytes", cacheRecorderReader.BytesRead)
+    		log.RInfof(stepID, "cache_archive_size", data, "Size of extracted cache archive: %d Bytes", cacheRecorderReader.BytesRead)
+    	}
 	}
 
 	fmt.Println()
