@@ -259,8 +259,8 @@ func main() {
 		}
 
 		fileInfo, err := inputFile.Stat()
-        if !err {
-            log.Infof("Fast archive found with name: %s, size: %d", fileInfo.name(), fileInfo.Size())
+        if err == nil {
+            log.Infof("Fast archive found with name: %s, size: %d", fileInfo.Name(), fileInfo.Size())
         }
 
         unarchiver := falib.NewUnarchiver(inputFile)
