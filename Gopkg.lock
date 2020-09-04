@@ -3,15 +3,15 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:dacd83ec550d6d5c2ac83e57f20d45a25a39d79c73be4451771f92572a1f6344"
+  digest = "1:caf5b6526ab478df1debb4048cc99489d3954975457c4ba63441f489c9053ea2"
   name = "github.com/bitrise-io/go-steputils"
   packages = ["stepconf"]
   pruneopts = "UT"
-  revision = "7c9aaee1af9593773b253b04dbcefbb1f527f184"
+  revision = "6d5afa53c7b85b6135e382105116d245b5997ace"
 
 [[projects]]
   branch = "master"
-  digest = "1:9ab8a25451807dee966e317fbb5cd39e9acbb281248fd96b896c4971de8723c1"
+  digest = "1:0c8282cb84562f0119ecabf1841a5a63c4ee815178bc2f1ae678e49b27551a25"
   name = "github.com/bitrise-io/go-utils"
   packages = [
     "colorstring",
@@ -23,15 +23,15 @@
     "pointers",
   ]
   pruneopts = "UT"
-  revision = "1f401bb88c99a08ea8fb9f61ce521f2cee9c5a41"
+  revision = "0c47c16813a4209321c9d0dba2e75867d6901ff2"
 
 [[projects]]
   branch = "master"
-  digest = "1:49565e25e42730301a01f1ff4e09cbc45113f36cd788749a1a7ab37bba70ba6f"
+  digest = "1:68675a99539d2f6cbb5dc0ebd0298acab0085277b6e13447eb49787892c5b2f1"
   name = "github.com/hendych/fast-archiver"
   packages = ["falib"]
   pruneopts = "UT"
-  revision = "ee236bdcdd2994e6f3366a6c579c05f6e48f5dfa"
+  revision = "e0ee7f4422d8ef374678efd8bd00c95ea4ce0853"
 
 [solve-meta]
   analyzer-name = "dep"
