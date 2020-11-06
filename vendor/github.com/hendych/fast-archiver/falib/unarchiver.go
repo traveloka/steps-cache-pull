@@ -191,7 +191,7 @@ func (u *Unarchiver) Run() error {
                     // Chtimes for symlink
                     time := time.Unix(int64(modTime), 0).Format("0601021504.05")
         			if err := exec.Command("touch", "-ht", time, filePath).Run(); err != nil {
-        				u.Logger.Warning("Failed to touch file(%s), error: %s", filePath, err)
+        				u.Logger.Warning("Failed to touch file(%s): %s", filePath, err)
         			}
     			}
 			} else {
@@ -203,14 +203,14 @@ func (u *Unarchiver) Run() error {
 
                 err = os.Chtimes(filePath, time.Unix(int64(modTime), 0), time.Unix(int64(modTime), 0))
        			if err != nil {
-       				u.Logger.Warning("Directory chtimes error:", err.Error())
+       				u.Logger.Warning("Directory chtimes:", err.Error())
        			}
 			}
 
 			if !u.IgnoreOwners {
 				err = os.Chown(filePath, int(uid), int(gid))
 				if err != nil {
-					u.Logger.Warning("Directory chown error:", err.Error())
+					u.Logger.Warning("Directory chown:", err.Error())
 				}
 			}
 		} else if blockType[0] == byte(blockTypeChecksum) {
@@ -275,12 +275,12 @@ func (u *Unarchiver) writeFile(blockSource chan block, workInProgress *sync.Wait
 
             err := os.Chtimes(block.filePath, modTime, modTime)
    			if err != nil {
-   				u.Logger.Warning("Unable to chtimes file error: ", err.Error())
+   				u.Logger.Warning("Unable to chtimes file: ", err.Error())
    			}
 		} else {
 			_, err := bufferedFile.Write(block.buffer[:block.numBytes])
 			if err != nil {
-				u.Logger.Warning("File write error:", err.Error())
+				u.Logger.Warning("File write:", err.Error())
 			}
 		}
 	}
