@@ -34,7 +34,7 @@ func NewDecompressReader(compressedFilePath, decompressAlgorithm string) (*Decom
 		log.Infof("%s file found: %s, size: %d", compressedFilePath, fileInfo.Name(), fileInfo.Size())
 	}
 
-	decompressedFilePath := GetuncompressedFilePathFrom(compressedFilePath, decompressAlgorithm)
+	decompressedFilePath := GetUncompressedFilePathFrom(compressedFilePath, decompressAlgorithm)
 
 	if decompressAlgorithm == "lz4" {
 		return &DecompressReader{
@@ -94,11 +94,21 @@ func FastArchiveDecompress(compressedFilePath, decompressAlgorithm string) (*os.
 	return decompressedFile
 }
 
-func GetuncompressedFilePathFrom(path, decompressAlgorithm string) (string) {
+func GetUncompressedFilePathFrom(path, decompressAlgorithm string) (string) {
 	if decompressAlgorithm == "lz4" {
 		return strings.ReplaceAll(path, ".lz4", "")
 	} else if decompressAlgorithm == "gzip" {
 		return strings.ReplaceAll(path, ".gz", "")
+	}
+
+	return path
+}
+
+func GetCompressedFilePathFrom(path, decompressAlgorithm string) (string) {
+	if decompressAlgorithm == "lz4" {
+		return path + ".lz4"
+	} else if decompressAlgorithm == "gzip" {
+		return path + ".gz"
 	}
 
 	return path

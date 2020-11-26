@@ -50,7 +50,12 @@ func (l *MultiLevelLogger) Warning(v ...interface{}) {
 // If the URI points to a local file it returns the local paths.
 func downloadCacheArchive(url string, conf Config) (string, error) {
 	if strings.HasPrefix(url, "file://") {
-		return strings.TrimPrefix(url, "file://"), nil
+		uri := strings.TrimPrefix(url, "file://")
+		if conf.DecompressArchive != "none" {
+			uri = GetCompressedFilePathFrom(uri, conf.DecompressArchive)
+		}
+
+		return uri, nil
 	}
 
 	downloadStartTime := time.Now()
@@ -79,12 +84,12 @@ func downloadCacheArchive(url string, conf Config) (string, error) {
 
     cacheArchivePath := "/tmp/cache-archive.tar"
     if conf.UseFastArchive == "true" {
-		cacheArchivePath = "/tmp/cache-archive.fast-archive"
-		
-		if conf.DecompressArchive != "none" {
-			cacheArchivePath = GetuncompressedFilePathFrom(cacheArchivePath, conf.DecompressArchive)
-		}
-    }
+		cacheArchivePath = "/tmp/cache-archive.fast-archive"	
+	}
+
+	if conf.DecompressArchive != "none" {
+		cacheArchivePath = GetCompressedFilePathFrom(cacheArchivePath, conf.DecompressArchive)
+	}
 
 	f, err := os.Create(cacheArchivePath)
 	if err != nil {
@@ -206,6 +211,7 @@ func main() {
 	if err := stepconf.Parse(&conf); err != nil {
 		failf(err.Error())
 	}
+
 	stepconf.Print(conf)
 	log.SetEnableDebugLog(conf.DebugMode)
 
