@@ -45,8 +45,13 @@ func NewDecompressReader(compressedFilePath, decompressAlgorithm string) (*Decom
 			decompressedFilePath: decompressedFilePath,
 		}, nil
 	} else if decompressAlgorithm == "gzip" { 
+		reader, err :=  gzip.NewReader(inputFile)
+		if err != nil {
+			return nil, err
+		}
+
 		return &DecompressReader{
-			reader: gzip.NewReader(inputFile),
+			reader: reader,
 			closer:	inputFile,
 			decompressedFilePath: decompressedFilePath,
 		}, nil
