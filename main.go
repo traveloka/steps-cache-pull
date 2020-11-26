@@ -29,11 +29,12 @@ type MultiLevelLogger struct {
 
 // Config stores the step inputs.
 type Config struct {
-	CacheAPIURL      string `env:"cache_api_url"`
-	DebugMode        bool   `env:"is_debug_mode,opt[true,false]"`
-	StackID          string `env:"BITRISEIO_STACK_ID"`
-	BuildSlug        string `env:"BITRISE_BUILD_SLUG"`
-	UseFastArchive   string `env:"use_fast_archive,opt[true,false]"`
+	CacheAPIURL      	string `env:"cache_api_url"`
+	DebugMode        	bool   `env:"is_debug_mode,opt[true,false]"`
+	StackID          	string `env:"BITRISEIO_STACK_ID"`
+	BuildSlug        	string `env:"BITRISE_BUILD_SLUG"`
+	UseFastArchive   	string `env:"use_fast_archive,opt[true,false]"`
+	DecompressArchive  	string `env:"decompress_algorithm,opt[none,lz4,gzip]"`
 }
 
 func (l *MultiLevelLogger) Verbose(v ...interface{}) {
@@ -47,7 +48,7 @@ func (l *MultiLevelLogger) Warning(v ...interface{}) {
 
 // downloadCacheArchive downloads the cache archive and returns the downloaded file's path.
 // If the URI points to a local file it returns the local paths.
-func downloadCacheArchive(url string, buildSlug string, use_fast_archive bool) (string, error) {
+func downloadCacheArchive(url string, conf Config) (string, error) {
 	if strings.HasPrefix(url, "file://") {
 		return strings.TrimPrefix(url, "file://"), nil
 	}
@@ -73,8 +74,12 @@ func downloadCacheArchive(url string, buildSlug string, use_fast_archive bool) (
 	}
 
     cacheArchivePath := "/tmp/cache-archive.tar"
-    if use_fast_archive {
-        cacheArchivePath = "/tmp/cache-archive.fast-archive"
+    if conf.UseFastArchive == "true" {
+		cacheArchivePath = "/tmp/cache-archive.fast-archive"
+		
+		if conf.DecompressArchive != "none" {
+			cacheArchivePath = GetuncompressedFilePathFrom(cacheArchivePath, conf.DecompressArchive)
+		}
     }
 
 	f, err := os.Create(cacheArchivePath)
@@ -90,7 +95,7 @@ func downloadCacheArchive(url string, buildSlug string, use_fast_archive bool) (
 
 	data := map[string]interface{}{
 		"cache_archive_size": bytesWritten,
-		"build_slug":         buildSlug,
+		"build_slug":         conf.BuildSlug,
 	}
 	log.Debugf("Size of downloaded cache archive: %d Bytes", bytesWritten)
 	log.RInfof(stepID, "cache_fallback_archive_size", data, "Size of downloaded cache archive: %d Bytes", bytesWritten)
@@ -239,7 +244,7 @@ func main() {
 	    fmt.Println()
         log.Infof("Downloading cache fast archive...")
 
-    	pth, err := downloadCacheArchive(cacheURI, conf.BuildSlug, conf.UseFastArchive == "true")
+		pth, err := downloadCacheArchive(cacheURI, conf)
     	if err != nil {
     		failf("Unable to download cache fast archive: %s", err)
     	}
@@ -248,23 +253,29 @@ func main() {
         log.Infof("Extracting cache archive using fast archive...")
 
         var inputFile *os.File
-		if pth != "" {
-			file, err := os.Open(pth)
-			if err != nil {
-				failf("Error opening input file:", err.Error())
-			}
-			inputFile = file
+		if conf.DecompressArchive != "none" {
+			inputFile = FastArchiveDecompress(pth, conf.DecompressArchive)
 		} else {
-			inputFile = os.Stdin
+			if pth != "" {
+				file, err := os.Open(pth)
+				if err != nil {
+					failf("Error opening input file:", err.Error())
+				}
+				inputFile = file
+			} else {
+				inputFile = os.Stdin
+			}
 		}
 
-		fileInfo, err := inputFile.Stat()
-        if err == nil {
-            log.Infof("Fast archive found with name: %s, size: %d", fileInfo.Name(), fileInfo.Size())
-        }
+		defer inputFile.Close()
 
+		fileInfo, err := inputFile.Stat()
+		if err == nil {
+			log.Infof("Fast archive file found: %s, size: %d", fileInfo.Name(), fileInfo.Size())
+		}
+		
         unarchiver := falib.NewUnarchiver(inputFile)
-		unarchiver.Logger = &MultiLevelLogger{syslog.New(os.Stderr, "", 0), false}
+		unarchiver.Logger = &MultiLevelLogger{syslog.New(os.Stderr, "", 0), true}
 		unarchiver.IgnorePerms = false
 		unarchiver.IgnoreOwners = false
 		unarchiver.DryRun = false
@@ -272,13 +283,11 @@ func main() {
         if err != nil {
         	failf("Fatal error in archiver:", err.Error())
         }
-
-        inputFile.Close()
 	} else {
 	    // Use Tar Archive
 
 	    cacheRecorderReader := NewRestoreReader(cacheReader)
-    	currentStackID := strings.TrimSpace(conf.StackID)
+		currentStackID := strings.TrimSpace(conf.StackID)
     	if len(currentStackID) > 0 {
     		fmt.Println()
     		log.Infof("Checking archive and current stacks")
@@ -322,10 +331,11 @@ func main() {
     		data := map[string]interface{}{
     			"archive_bytes_read": cacheRecorderReader.BytesRead,
     			"build_slug":         conf.BuildSlug,
-    		}
+			}
+
     		log.RInfof(stepID, "cache_archive_fallback", data, "Failed to uncompress cache archive stream: %s", err)
 
-    		pth, err := downloadCacheArchive(cacheURI, conf.BuildSlug, conf.UseFastArchive == "true")
+			pth, err := downloadCacheArchive(cacheURI, conf)
     		if err != nil {
     			failf("Fallback failed, unable to download cache archive: %s", err)
     		}
@@ -337,7 +347,8 @@ func main() {
     		data := map[string]interface{}{
     			"cache_archive_size": cacheRecorderReader.BytesRead,
     			"build_slug":         conf.BuildSlug,
-    		}
+			}
+
     		log.Debugf("Size of extracted cache archive: %d Bytes", cacheRecorderReader.BytesRead)
     		log.RInfof(stepID, "cache_archive_size", data, "Size of extracted cache archive: %d Bytes", cacheRecorderReader.BytesRead)
     	}

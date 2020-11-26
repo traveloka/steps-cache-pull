@@ -81,6 +81,17 @@ inputs:
       value_options:
         - "true"
         - "false"
+  - decompress_algorithm: "true"
+    opts:
+      title: "Decompress Algorithm"
+      summary: "If true will decompress current archive using specified algorithm"
+      description: |-
+        If true will decompress current archive using specified algorithm.
+      is_required: true
+      value_options:
+        - "none"
+        - "lz4"
+        - "gzip"
   - cache_api_url: $BITRISE_CACHE_API_URL
     opts:
       title: "Cache API URL"
