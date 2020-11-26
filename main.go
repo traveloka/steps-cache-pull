@@ -53,6 +53,10 @@ func downloadCacheArchive(url string, conf Config) (string, error) {
 		return strings.TrimPrefix(url, "file://"), nil
 	}
 
+	downloadStartTime := time.Now()
+	fmt.Println()
+	log.Infof("Downloading remote cache archive")
+
 	resp, err := http.Get(url)
 	if err != nil {
 		return "", err
@@ -100,11 +104,18 @@ func downloadCacheArchive(url string, conf Config) (string, error) {
 	log.Debugf("Size of downloaded cache archive: %d Bytes", bytesWritten)
 	log.RInfof(stepID, "cache_fallback_archive_size", data, "Size of downloaded cache archive: %d Bytes", bytesWritten)
 
+	fmt.Println()
+    log.Donef("Done downloading cache in: ", time.Since(downloadStartTime).String())
+
 	return cacheArchivePath, nil
 }
 
 // performRequest performs an http request and returns the response's body, if the status code is 200.
 func performRequest(url string) (io.ReadCloser, error) {
+	fmt.Println()
+	log.Infof("Downloading remote cache archive")
+
+	downloadStartTime := time.Now()
 	resp, err := http.Get(url)
 	if err != nil {
 		return nil, err
@@ -124,6 +135,9 @@ func performRequest(url string) (io.ReadCloser, error) {
 
 		return nil, fmt.Errorf("non success response code: %d, body: %s", resp.StatusCode, string(responseBytes))
 	}
+
+	fmt.Println()
+    log.Donef("Done downloading cache in: ", time.Since(downloadStartTime).String())
 
 	return resp.Body, nil
 }
@@ -221,9 +235,6 @@ func main() {
     		}
         }
 	} else {
-		fmt.Println()
-		log.Infof("Downloading remote cache archive")
-
 		downloadURL, err := getCacheDownloadURL(conf.CacheAPIURL)
 		if err != nil {
 			failf("Failed to get cache download url: %s", err)
@@ -240,17 +251,10 @@ func main() {
 
 	if conf.UseFastArchive == "true" {
 	    // Use Fast Archive
-
-	    fmt.Println()
-        log.Infof("Downloading cache fast archive...")
-
 		pth, err := downloadCacheArchive(cacheURI, conf)
     	if err != nil {
     		failf("Unable to download cache fast archive: %s", err)
-    	}
-
-	    fmt.Println()
-        log.Infof("Extracting cache archive using fast archive...")
+		}
 
         var inputFile *os.File
 		if conf.DecompressArchive != "none" {
@@ -273,6 +277,9 @@ func main() {
 		if err == nil {
 			log.Infof("Fast archive file found: %s, size: %d", fileInfo.Name(), fileInfo.Size())
 		}
+
+		fmt.Println()
+        log.Infof("Extracting cache archive using fast archive...")
 		
         unarchiver := falib.NewUnarchiver(inputFile)
 		unarchiver.Logger = &MultiLevelLogger{syslog.New(os.Stderr, "", 0), true}
@@ -285,7 +292,7 @@ func main() {
         }
 	} else {
 	    // Use Tar Archive
-
+		tarUnarchiveStartTime := time.Now()
 	    cacheRecorderReader := NewRestoreReader(cacheReader)
 		currentStackID := strings.TrimSpace(conf.StackID)
     	if len(currentStackID) > 0 {
@@ -351,10 +358,13 @@ func main() {
 
     		log.Debugf("Size of extracted cache archive: %d Bytes", cacheRecorderReader.BytesRead)
     		log.RInfof(stepID, "cache_archive_size", data, "Size of extracted cache archive: %d Bytes", cacheRecorderReader.BytesRead)
-    	}
+		}
+		
+		fmt.Println()
+    	log.Donef("Done unarchiving tar in: ", time.Since(tarUnarchiveStartTime).String())
 	}
 
 	fmt.Println()
 	log.Donef("Done")
-	log.Printf("Took: " + time.Since(startTime).String())
+	log.Printf("Total time unarchive + uncompress: " + time.Since(startTime).String())
 }

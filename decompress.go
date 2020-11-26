@@ -89,8 +89,7 @@ func FastArchiveDecompress(compressedFilePath, decompressAlgorithm string) (*os.
 		return nil
 	}
 
-	log.Donef("Done uncompressing file in: ", decompress.decompressedFilePath)
-	log.Infof("Uncompressing took: " + time.Since(uncompressStartTime).String())
+	log.Donef("Done uncompressing file in: ", time.Since(uncompressStartTime).String())
 
 	return decompressedFile
 }
