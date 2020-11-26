@@ -1,6 +1,7 @@
 package main
 
 import (
+	"compress/gzip"
 	"fmt"
 	"io"
 	"os"
@@ -9,6 +10,7 @@ import (
 
 	"github.com/bitrise-io/go-utils/log"
 	"github.com/pierrec/lz4/v4"
+	"github.com/DataDog/zstd"
 )
 
 type DecompressReader struct {
@@ -39,6 +41,18 @@ func NewDecompressReader(compressedFilePath, decompressAlgorithm string) (*Decom
 	if decompressAlgorithm == "lz4" {
 		return &DecompressReader{
 			reader: lz4.NewReader(inputFile),
+			closer:	inputFile,
+			decompressedFilePath: decompressedFilePath,
+		}, nil
+	} else if decompressAlgorithm == "gzip" { 
+		return &DecompressReader{
+			reader: gzip.NewReader(inputFile),
+			closer:	inputFile,
+			decompressedFilePath: decompressedFilePath,
+		}, nil
+	} else if decompressAlgorithm == "zstd" {
+		return &DecompressReader{
+			reader: zstd.NewReader(inputFile),
 			closer:	inputFile,
 			decompressedFilePath: decompressedFilePath,
 		}, nil
@@ -99,6 +113,8 @@ func GetUncompressedFilePathFrom(path, decompressAlgorithm string) (string) {
 		return strings.ReplaceAll(path, ".lz4", "")
 	} else if decompressAlgorithm == "gzip" {
 		return strings.ReplaceAll(path, ".gz", "")
+	} else if decompressAlgorithm == "zstd" {
+		return strings.ReplaceAll(path, ".zst", "")
 	}
 
 	return path
@@ -109,6 +125,8 @@ func GetCompressedFilePathFrom(path, decompressAlgorithm string) (string) {
 		return path + ".lz4"
 	} else if decompressAlgorithm == "gzip" {
 		return path + ".gz"
+	} else if decompressAlgorithm == "zstd" {
+		return path + ".zst"
 	}
 
 	return path

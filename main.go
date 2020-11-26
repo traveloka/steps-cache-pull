@@ -34,7 +34,7 @@ type Config struct {
 	StackID          	string `env:"BITRISEIO_STACK_ID"`
 	BuildSlug        	string `env:"BITRISE_BUILD_SLUG"`
 	UseFastArchive   	string `env:"use_fast_archive,opt[true,false]"`
-	DecompressArchive  	string `env:"decompress_algorithm,opt[none,lz4,gzip]"`
+	DecompressArchive  	string `env:"decompress_algorithm,opt[none,lz4,gzip,zstd]"`
 }
 
 func (l *MultiLevelLogger) Verbose(v ...interface{}) {

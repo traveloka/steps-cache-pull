@@ -92,6 +92,7 @@ inputs:
         - "none"
         - "lz4"
         - "gzip"
+        - "zstd"
   - cache_api_url: $BITRISE_CACHE_API_URL
     opts:
       title: "Cache API URL"

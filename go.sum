@@ -1,3 +1,5 @@
+github.com/DataDog/zstd v1.4.5 h1:EndNeuB0l9syBZhut0wns3gV1hL8zX8LIu6ZiVHWLIQ=
+github.com/DataDog/zstd v1.4.5/go.mod h1:1jcaCB/ufaK+sKp1NBhlGmpz41jOoPQ35bpF36t7BBo=
 github.com/bitrise-io/go-steputils v0.0.0-20201016102104-03ae3a6ded35 h1:iKtx/RxSrA9xcjZ17W3yu3jMzwowNB6nxLF/1BwVYQ8=
 github.com/bitrise-io/go-steputils v0.0.0-20201016102104-03ae3a6ded35/go.mod h1:GXgBV3Frd3qcnsg+NryQTyx1CHjZHr/2w7Bx4WAcB4o=
 github.com/bitrise-io/go-utils v0.0.0-20200629150542-0c47c16813a4 h1:dJA9tN+sygrsTstfYM76QRknWwKcvA0icshabL5FDSk=
