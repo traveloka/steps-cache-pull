@@ -203,14 +203,14 @@ func (u *Unarchiver) Run() error {
 
                 err = os.Chtimes(filePath, time.Unix(int64(modTime), 0), time.Unix(int64(modTime), 0))
        			if err != nil {
-       				u.Logger.Warning("Directory chtimes error:", err.Error())
+       				u.Logger.Warning("chtimes info:", err.Error())
        			}
 			}
 
 			if !u.IgnoreOwners {
-				err = os.Chown(filePath, int(uid), int(gid))
+				err = os.Lchown(filePath, int(uid), int(gid))
 				if err != nil {
-					u.Logger.Warning("Directory chown error:", err.Error())
+					u.Logger.Warning("Chown info:", err.Error())
 				}
 			}
 		} else if blockType[0] == byte(blockTypeChecksum) {

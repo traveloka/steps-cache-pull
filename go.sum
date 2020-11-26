@@ -7,8 +7,8 @@ github.com/bitrise-io/go-utils v0.0.0-20200629150542-0c47c16813a4/go.mod h1:tTEs
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
-github.com/hendych/fast-archiver v0.0.0-20200904170023-e0ee7f4422d8 h1:Rb7xNTwasTTO9EQMdgoaAirx2jKnBy4GMLSvoaYO2J8=
-github.com/hendych/fast-archiver v0.0.0-20200904170023-e0ee7f4422d8/go.mod h1:MxX/yq+RWBlVUinoKpGPBiQnbFaw6Tq0RQvxT45cSsM=
+github.com/hendych/fast-archiver v0.0.0-20201126162613-6e201e8e6098 h1:9h3+DddWVaMjVJEFtjfhBkix/5sl2EGRoaGg4ZDi/fc=
+github.com/hendych/fast-archiver v0.0.0-20201126162613-6e201e8e6098/go.mod h1:MxX/yq+RWBlVUinoKpGPBiQnbFaw6Tq0RQvxT45cSsM=
 github.com/kisielk/errcheck v1.2.0/go.mod h1:/BMXB+zMLi60iA8Vv6Ksmxu/1UDYcXs4uQLJ+jE2L00=
 github.com/pierrec/lz4/v4 v4.1.1 h1:cS6aGkNLJr4u+UwaA21yp+gbWN3WJWtKo1axmPDObMA=
 github.com/pierrec/lz4/v4 v4.1.1/go.mod h1:gZWDp/Ze/IJXGXf23ltt2EXimqmTUXEy0GFuRQyBid4=
