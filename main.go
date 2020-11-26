@@ -282,7 +282,7 @@ func main() {
         log.Infof("Extracting cache archive using fast archive...")
 		
         unarchiver := falib.NewUnarchiver(inputFile)
-		unarchiver.Logger = &MultiLevelLogger{syslog.New(os.Stderr, "", 0), true}
+		unarchiver.Logger = &MultiLevelLogger{syslog.New(os.Stderr, "", 0), false}
 		unarchiver.IgnorePerms = false
 		unarchiver.IgnoreOwners = false
 		unarchiver.DryRun = false
