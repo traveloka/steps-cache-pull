@@ -11,6 +11,7 @@ import (
 	"github.com/bitrise-io/go-utils/log"
 	"github.com/pierrec/lz4/v4"
 	"github.com/klauspost/compress/zstd"
+	"github.com/klauspost/pgzip"
 )
 
 type DecompressReader struct {
@@ -46,6 +47,17 @@ func NewDecompressReader(compressedFilePath, decompressAlgorithm string) (*Decom
 		}, nil
 	} else if decompressAlgorithm == "gzip" { 
 		reader, err :=  gzip.NewReader(inputFile)
+		if err != nil {
+			return nil, err
+		}
+
+		return &DecompressReader{
+			reader: reader,
+			closer:	inputFile,
+			decompressedFilePath: decompressedFilePath,
+		}, nil
+	} else if decompressAlgorithm == "pgzip" {
+		reader, err :=  pgzip.NewReader(inputFile)
 		if err != nil {
 			return nil, err
 		}
@@ -121,7 +133,7 @@ func FastArchiveDecompress(compressedFilePath, decompressAlgorithm string) (*os.
 func GetUncompressedFilePathFrom(path, decompressAlgorithm string) (string) {
 	if decompressAlgorithm == "lz4" {
 		return strings.ReplaceAll(path, ".lz4", "")
-	} else if decompressAlgorithm == "gzip" {
+	} else if decompressAlgorithm == "gzip" || decompressAlgorithm == "pgzip" {
 		return strings.ReplaceAll(path, ".gz", "")
 	} else if decompressAlgorithm == "zstd" {
 		return strings.ReplaceAll(path, ".zst", "")
@@ -133,7 +145,7 @@ func GetUncompressedFilePathFrom(path, decompressAlgorithm string) (string) {
 func GetCompressedFilePathFrom(path, decompressAlgorithm string) (string) {
 	if decompressAlgorithm == "lz4" {
 		return path + ".lz4"
-	} else if decompressAlgorithm == "gzip" {
+	} else if decompressAlgorithm == "gzip" || decompressAlgorithm == "pgzip" {
 		return path + ".gz"
 	} else if decompressAlgorithm == "zstd" {
 		return path + ".zst"
