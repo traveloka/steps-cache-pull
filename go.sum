@@ -1,5 +1,3 @@
-github.com/DataDog/zstd v1.4.5 h1:EndNeuB0l9syBZhut0wns3gV1hL8zX8LIu6ZiVHWLIQ=
-github.com/DataDog/zstd v1.4.5/go.mod h1:1jcaCB/ufaK+sKp1NBhlGmpz41jOoPQ35bpF36t7BBo=
 github.com/bitrise-io/go-steputils v0.0.0-20201016102104-03ae3a6ded35 h1:iKtx/RxSrA9xcjZ17W3yu3jMzwowNB6nxLF/1BwVYQ8=
 github.com/bitrise-io/go-steputils v0.0.0-20201016102104-03ae3a6ded35/go.mod h1:GXgBV3Frd3qcnsg+NryQTyx1CHjZHr/2w7Bx4WAcB4o=
 github.com/bitrise-io/go-utils v0.0.0-20200629150542-0c47c16813a4 h1:dJA9tN+sygrsTstfYM76QRknWwKcvA0icshabL5FDSk=
@@ -10,6 +8,8 @@ github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSs
 github.com/hendych/fast-archiver v0.0.0-20201126162613-6e201e8e6098 h1:9h3+DddWVaMjVJEFtjfhBkix/5sl2EGRoaGg4ZDi/fc=
 github.com/hendych/fast-archiver v0.0.0-20201126162613-6e201e8e6098/go.mod h1:MxX/yq+RWBlVUinoKpGPBiQnbFaw6Tq0RQvxT45cSsM=
 github.com/kisielk/errcheck v1.2.0/go.mod h1:/BMXB+zMLi60iA8Vv6Ksmxu/1UDYcXs4uQLJ+jE2L00=
+github.com/klauspost/compress v1.11.3 h1:dB4Bn0tN3wdCzQxnS8r06kV74qN/TAfaIS0bVE8h3jc=
+github.com/klauspost/compress v1.11.3/go.mod h1:aoV0uJVorq1K+umq18yTdKaF57EivdYsUV+/s2qKfXs=
 github.com/pierrec/lz4/v4 v4.1.1 h1:cS6aGkNLJr4u+UwaA21yp+gbWN3WJWtKo1axmPDObMA=
 github.com/pierrec/lz4/v4 v4.1.1/go.mod h1:gZWDp/Ze/IJXGXf23ltt2EXimqmTUXEy0GFuRQyBid4=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=

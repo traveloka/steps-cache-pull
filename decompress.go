@@ -10,7 +10,7 @@ import (
 
 	"github.com/bitrise-io/go-utils/log"
 	"github.com/pierrec/lz4/v4"
-	"github.com/DataDog/zstd"
+	"github.com/klauspost/compress/zstd"
 )
 
 type DecompressReader struct {
@@ -56,8 +56,13 @@ func NewDecompressReader(compressedFilePath, decompressAlgorithm string) (*Decom
 			decompressedFilePath: decompressedFilePath,
 		}, nil
 	} else if decompressAlgorithm == "zstd" {
+		reader, err :=  zstd.NewReader(inputFile)
+		if err != nil {
+			return nil, err
+		}
+
 		return &DecompressReader{
-			reader: zstd.NewReader(inputFile),
+			reader: reader,
 			closer:	inputFile,
 			decompressedFilePath: decompressedFilePath,
 		}, nil
