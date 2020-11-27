@@ -287,6 +287,7 @@ func main() {
 		fmt.Println()
         log.Infof("Extracting cache archive using fast archive...")
 		
+		unarchiveTime := time.Now()
         unarchiver := falib.NewUnarchiver(inputFile)
 		unarchiver.Logger = &MultiLevelLogger{syslog.New(os.Stderr, "", 0), false}
 		unarchiver.IgnorePerms = false
@@ -295,7 +296,9 @@ func main() {
 		err = unarchiver.Run()
         if err != nil {
         	failf("Fatal error in archiver:", err.Error())
-        }
+		}
+		fmt.Println()
+    	log.Donef("Done unarchiving fast-archive in: ", time.Since(unarchiveTime).String())
 	} else {
 	    // Use Tar Archive
 		tarUnarchiveStartTime := time.Now()
@@ -372,5 +375,5 @@ func main() {
 
 	fmt.Println()
 	log.Donef("Done")
-	log.Printf("Total time unarchive + uncompress: " + time.Since(startTime).String())
+	log.Printf("Total step time: " + time.Since(startTime).String())
 }
