@@ -255,6 +255,8 @@ func main() {
         }
 	}
 
+	log.Infof("Cache URL: %s", conf.CacheAPIURL)
+
 	if conf.UseFastArchive == "true" {
 	    // Use Fast Archive
 		pth, err := downloadCacheArchive(cacheURI, conf)
