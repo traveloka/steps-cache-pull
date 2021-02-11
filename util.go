@@ -62,7 +62,7 @@ func StoreCacheURL(url string) error {
         return fmt.Errorf("failed to split archive, error: %s", err)
     }
 
-    log.Donef("echo url success...\n")
+    log.Donef("Store url success...\n")
 
     return nil
 }
