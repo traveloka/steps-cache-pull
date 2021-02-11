@@ -221,24 +221,8 @@ func getCacheDownloadURLFromArtifact(conf Config, build_slug string) (string, er
 
     cacheUrl, err := Cat(cachePath)
     if err != nil {
-        log.Errorf("Cache URL from previous artifact not found.\n")
-        log.Infof("Using fallback (default) download URL.\n")
-
-        return getCacheDownloadURL(conf.CacheAPIURL)
+        return "", fmt.Errorf("failed to get cache url, reason: %s", err)
     }
-
-//     cacheArchivePath := "/tmp/cache-archive.tar"
-//     if conf.UseFastArchive == "true" {
-// 		cacheArchivePath = "/tmp/cache-archive.fast-archive"
-// 	}
-//
-// 	if conf.DecompressArchive != "none" {
-//     	cacheArchivePath = GetCompressedFilePathFrom(cacheArchivePath, conf.DecompressArchive)
-//     }
-//
-// 	if err := MergeCache(cacheArchivePath); err != nil {
-// 	    return "", fmt.Errorf("failed when merging split cache: %s", err)
-// 	}
 
     return cacheUrl, nil
 }
@@ -345,8 +329,8 @@ func performRequest(url string) (io.ReadCloser, error) {
 }
 
 // getCacheDownloadURL gets the given build's cache download URL.
-func getCacheDownloadURL(cacheAPIURL string) (string, error) {
-	req, err := http.NewRequest("GET", cacheAPIURL, nil)
+func getCacheDownloadURL(conf Config) (string, error) {
+	req, err := http.NewRequest("GET", conf.CacheAPIURL, nil)
 	if err != nil {
 		return "", fmt.Errorf("failed to create request: %s", err)
 	}
@@ -368,6 +352,14 @@ func getCacheDownloadURL(cacheAPIURL string) (string, error) {
 	}
 
 	if resp.StatusCode < 200 || resp.StatusCode > 202 {
+	    if conf.CacheAppSlug != "" {
+	        buildSlug := getLatestBuildDefaultBranchArtifact(conf)
+	        log.Errorf("build cache not found\n")
+            log.Infof("trying to use cache from default branch in app: %s in build %s instead", conf.CacheAppSlug, buildSlug)
+
+            return getCacheDownloadURLFromArtifact(conf, buildSlug)
+        }
+
 		return "", fmt.Errorf("build cache not found: probably cache not initialised yet (first cache push initialises the cache), nothing to worry about ;)")
 	}
 
@@ -445,12 +437,7 @@ func main() {
 	} else {
 	    var downloadURL string
 	    var err error
-	    if conf.CacheAppSlug != "" {
-	        buildSlug := getLatestBuildDefaultBranchArtifact(conf)
-            downloadURL, err = getCacheDownloadURLFromArtifact(conf, buildSlug)
-	    } else {
-	        downloadURL, err = getCacheDownloadURL(conf.CacheAPIURL)
-	    }
+	    downloadURL, err = getCacheDownloadURL(conf)
 		if err != nil {
 			failf("Failed to get cache download url: %s", err)
 		}
@@ -466,19 +453,10 @@ func main() {
 
 	if conf.UseFastArchive == "true" {
 	    // Use Fast Archive
-// 	    var pth string
-// 	    var errDownload error
-// 	    if conf.CacheAppSlug != "" {
-// 	        buildSlug := getLatestBuildDefaultBranchArtifact(conf)
-// 	        pth, errDownload = downloadArtifact(conf, buildSlug)
-// 	    } else {
-            pth, errDownload := downloadCacheArchive(cacheURI, conf)
-// 	    }
-
-	    if errDownload != nil {
-	        failf("Error downloading archive: %s", errDownload)
+        pth, err := downloadCacheArchive(cacheURI, conf)
+	    if err != nil {
+	        failf("Error downloading archive: %s", err)
 	    }
-
 
         var inputFile *os.File
 		if conf.DecompressArchive != "none" {
