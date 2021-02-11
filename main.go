@@ -352,14 +352,6 @@ func getCacheDownloadURL(conf Config) (string, error) {
 	}
 
 	if resp.StatusCode < 200 || resp.StatusCode > 202 {
-	    if conf.CacheAppSlug != "" {
-	        buildSlug := getLatestBuildDefaultBranchArtifact(conf)
-	        log.Errorf("build cache not found\n")
-            log.Infof("trying to use cache from default branch in app: %s in build %s instead", conf.CacheAppSlug, buildSlug)
-
-            return getCacheDownloadURLFromArtifact(conf, buildSlug)
-        }
-
 		return "", fmt.Errorf("build cache not found: probably cache not initialised yet (first cache push initialises the cache), nothing to worry about ;)")
 	}
 
@@ -437,7 +429,16 @@ func main() {
 	} else {
 	    var downloadURL string
 	    var err error
-	    downloadURL, err = getCacheDownloadURL(conf)
+
+        if conf.CacheAppSlug != "" {
+	        buildSlug := getLatestBuildDefaultBranchArtifact(conf)
+            log.Infof("Using cache from default branch in app: %s in build %s instead", conf.CacheAppSlug, buildSlug)
+
+            downloadURL, err = getCacheDownloadURLFromArtifact(conf, buildSlug)
+        } else {
+            downloadURL, err = getCacheDownloadURL(conf)
+        }
+
 		if err != nil {
 			failf("Failed to get cache download url: %s", err)
 		}

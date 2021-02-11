@@ -97,9 +97,12 @@ inputs:
   - cache_app_slug: ""
     opts:
       title: "Cache App Slug"
-      summary: "If filled, will get cache from latest build of default branch artifact using specified app slug."
+      summary: "If filled, it will get cache from latest build of default branch artifact using specified app slug instead of using own app's cache."
       description: |-
-        If filled, will get cache from latest build of default branch artifact using specified app slug.
+        By default, this step will pull cache from their own app slug ex: Traveloka iOS.
+
+        If filled, it will get cache from latest build of default branch artifact using specified app slug instead of using own app's cache.
+        So, it will use other app cache instead, ex: Traveloka iOS Playground, etc.
   - access_token:
     opts:
       title: Bitrise Access Token
