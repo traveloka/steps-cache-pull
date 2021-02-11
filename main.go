@@ -118,7 +118,7 @@ func getLatestBuildDefaultBranchArtifact(conf Config) string {
 }
 
 // Download artifact from specified app slug and build slug
-func downloadArtifact(conf Config, build_slug string) (string, error) {
+func getCacheDownloadURLFromArtifact(conf Config, build_slug string) (string, error) {
     downloadStartTime := time.Now()
 	fmt.Println()
 	log.Infof("Downloading artifact cache from: %s build: %s", conf.CacheAppSlug, build_slug)
@@ -146,23 +146,38 @@ func downloadArtifact(conf Config, build_slug string) (string, error) {
     }
 
     jsonData, _ := jsonMap["data"].([]interface{})
-    foundArtifact := false
+    cachePath := ""
     if jsonData != nil {
         for _, buildJson := range jsonData {
-            if jsonArtifact, ok := buildJson.(map[string]interface{}); ok && strings.Contains(jsonArtifact["title"].(string), "buck-cache") {
-                foundArtifact = true
+            if jsonArtifact, ok := buildJson.(map[string]interface{}); ok && strings.Contains(jsonArtifact["title"].(string), "cache.txt") {
                 log.Infof("Found artifacts: %s", jsonArtifact["title"])
 
-                // Download the artifact
+                // Get artifact download url
                 url := "https://api.bitrise.io/v0.1/apps/" + conf.CacheAppSlug + "/builds/" + build_slug + "/artifacts/" + jsonArtifact["slug"].(string)
                 req, _ := http.NewRequest("GET", url, nil)
                 req.Header = defaultHeader(conf)
 
                 client := &http.Client{}
-                resp, err := client.Do(req)
-            	if err != nil {
-            		return "", err
+                res, errArtifact := client.Do(req)
+                if errArtifact != nil {
+            		return "", errArtifact
             	}
+
+                defer res.Body.Close()
+
+            	jsonMap := make(map[string]interface{})
+                errArtifact = json.Unmarshal([]byte(string(data)), &jsonMap)
+                if errArtifact != nil {
+                    failf("Fail unmarshal json data with error %s\n", err)
+                }
+
+                jsonData, _ := jsonMap["data"].(map[string]interface{})
+                downloadUrl := jsonData["expiring_download_url"].(string)
+
+                resp, err := http.Get(downloadUrl)
+                if err != nil {
+                    return "", err
+                }
 
             	defer func() {
             		if err := resp.Body.Close(); err != nil {
@@ -179,7 +194,7 @@ func downloadArtifact(conf Config, build_slug string) (string, error) {
             		return "", fmt.Errorf("non success response code: %d, body: %s", resp.StatusCode, string(responseBytes))
             	}
 
-            	cachePath := "/tmp/" + jsonArtifact["title"].(string)
+            	cachePath = "/tmp/" + jsonArtifact["title"].(string)
 
                 f, err := os.Create(cachePath)
             	if err != nil {
@@ -197,27 +212,32 @@ func downloadArtifact(conf Config, build_slug string) (string, error) {
         }
     }
 
-    if !foundArtifact {
+    if cachePath == "" {
         return "", fmt.Errorf("Artifact not found. You may haven't build or had cache before.")
     }
 
     fmt.Println()
     log.Donef("Done downloading cache in: %s", time.Since(downloadStartTime).String())
 
-    cacheArchivePath := "/tmp/cache-archive.tar"
-    if conf.UseFastArchive == "true" {
-		cacheArchivePath = "/tmp/cache-archive.fast-archive"
-	}
-
-	if conf.DecompressArchive != "none" {
-    	cacheArchivePath = GetCompressedFilePathFrom(cacheArchivePath, conf.DecompressArchive)
+    cacheUrl, err := Cat(cachePath)
+    if err != nil {
+        return "", err
     }
 
-	if err := MergeCache(cacheArchivePath); err != nil {
-	    return "", fmt.Errorf("failed when merging split cache: %s", err)
-	}
+//     cacheArchivePath := "/tmp/cache-archive.tar"
+//     if conf.UseFastArchive == "true" {
+// 		cacheArchivePath = "/tmp/cache-archive.fast-archive"
+// 	}
+//
+// 	if conf.DecompressArchive != "none" {
+//     	cacheArchivePath = GetCompressedFilePathFrom(cacheArchivePath, conf.DecompressArchive)
+//     }
+//
+// 	if err := MergeCache(cacheArchivePath); err != nil {
+// 	    return "", fmt.Errorf("failed when merging split cache: %s", err)
+// 	}
 
-    return cacheArchivePath, nil
+    return cacheUrl, nil
 }
 
 // downloadCacheArchive downloads the cache archive and returns the downloaded file's path.
@@ -415,7 +435,14 @@ func main() {
     		}
         }
 	} else {
-		downloadURL, err := getCacheDownloadURL(conf.CacheAPIURL)
+	    var downloadURL string
+	    var err error
+	    if conf.CacheAppSlug != "" {
+	        buildSlug := getLatestBuildDefaultBranchArtifact(conf)
+            downloadURL, err = getCacheDownloadURLFromArtifact(conf, buildSlug)
+	    } else {
+	        downloadURL, err = getCacheDownloadURL(conf.CacheAPIURL)
+	    }
 		if err != nil {
 			failf("Failed to get cache download url: %s", err)
 		}
@@ -429,19 +456,16 @@ func main() {
         }
 	}
 
-	log.Infof("Cache URL: %s", conf.CacheAPIURL)
-
 	if conf.UseFastArchive == "true" {
 	    // Use Fast Archive
-	    var pth string
-	    var errDownload error
-	    if conf.CacheAppSlug != "" {
-	        buildSlug := getLatestBuildDefaultBranchArtifact(conf)
-	        pth, errDownload = downloadArtifact(conf, buildSlug)
-
-	    } else {
-            pth, errDownload = downloadCacheArchive(cacheURI, conf)
-	    }
+// 	    var pth string
+// 	    var errDownload error
+// 	    if conf.CacheAppSlug != "" {
+// 	        buildSlug := getLatestBuildDefaultBranchArtifact(conf)
+// 	        pth, errDownload = downloadArtifact(conf, buildSlug)
+// 	    } else {
+            pth, errDownload := downloadCacheArchive(cacheURI, conf)
+// 	    }
 
 	    if errDownload != nil {
 	        failf("Error downloading archive: %s", errDownload)

@@ -38,3 +38,16 @@ func MergeCache(to_path string) error {
 
 	return nil
 }
+
+func Cat(path string) (string, error) {
+	cmd := command.New("bash", "-c", "cat " + path)
+    cmd.SetStderr(os.Stderr)
+    log.Debugf("$ " + cmd.PrintableCommandArgs())
+
+    output, err := cmd.RunAndReturnTrimmedOutput()
+    if err != nil {
+        return "", fmt.Errorf("failed to get default branch, error: %s", err)
+    }
+
+	return output, nil
+}
