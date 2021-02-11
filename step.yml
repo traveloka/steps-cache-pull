@@ -95,23 +95,23 @@ inputs:
         - "zstd"
         - "pgzip"
   - cache_app_slug: ""
-      opts:
-        title: "Cache App Slug"
-        summary: "If filled, will get cache from latest build of default branch artifact using specified app slug."
-        description: |-
-          If filled, will get cache from latest build of default branch artifact using specified app slug.
+    opts:
+      title: "Cache App Slug"
+      summary: "If filled, will get cache from latest build of default branch artifact using specified app slug."
+      description: |-
+        If filled, will get cache from latest build of default branch artifact using specified app slug.
   - access_token:
-      opts:
-        title: Bitrise Access Token
-        summary: Your access token
-        description: |
-          Your access token
+    opts:
+      title: Bitrise Access Token
+      summary: Your access token
+      description: |
+        Your access token
 
-          To acquire a `Personal Access Token` for your user, sign in with that user on [bitrise.io](https://bitrise.io),
-          go to your `Account Settings` page, and select the [Security tab](https://www.bitrise.io/me/profile#/security) on the left side.
-        is_required: true
-        is_expand: true
-        is_sensitive: true
+        To acquire a `Personal Access Token` for your user, sign in with that user on [bitrise.io](https://bitrise.io),
+        go to your `Account Settings` page, and select the [Security tab](https://www.bitrise.io/me/profile#/security) on the left side.
+      is_required: true
+      is_expand: true
+      is_sensitive: true
   - cache_api_url: $BITRISE_CACHE_API_URL
     opts:
       title: "Cache API URL"
