@@ -202,7 +202,7 @@ func downloadArtifact(conf Config, build_slug string) (string, error) {
     }
 
     fmt.Println()
-    log.Donef("Done downloading cache in: ", time.Since(downloadStartTime).String())
+    log.Donef("Done downloading cache in: %s", time.Since(downloadStartTime).String())
 
     cacheArchivePath := "/tmp/cache-archive.tar"
     if conf.UseFastArchive == "true" {
@@ -284,7 +284,7 @@ func downloadCacheArchive(url string, conf Config) (string, error) {
 	log.RInfof(stepID, "cache_fallback_archive_size", data, "Size of downloaded cache archive: %d Bytes", bytesWritten)
 
 	fmt.Println()
-    log.Donef("Done downloading cache in: ", time.Since(downloadStartTime).String())
+    log.Donef("Done downloading cache in: %s", time.Since(downloadStartTime).String())
 
 	return cacheArchivePath, nil
 }
@@ -316,7 +316,7 @@ func performRequest(url string) (io.ReadCloser, error) {
 	}
 
 	fmt.Println()
-    log.Donef("Done downloading cache in: ", time.Since(downloadStartTime).String())
+    log.Donef("Done downloading cache in: %s", time.Since(downloadStartTime).String())
 
 	return resp.Body, nil
 }
