@@ -209,6 +209,10 @@ func downloadArtifact(conf Config, build_slug string) (string, error) {
 		cacheArchivePath = "/tmp/cache-archive.fast-archive"
 	}
 
+	if conf.DecompressArchive != "none" {
+    	cacheArchivePath = GetCompressedFilePathFrom(cacheArchivePath, conf.DecompressArchive)
+    }
+
 	if err := MergeCache(cacheArchivePath); err != nil {
 	    return "", fmt.Errorf("failed when merging split cache: %s", err)
 	}
