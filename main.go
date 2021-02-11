@@ -99,7 +99,7 @@ func getLatestBuildDefaultBranchArtifact(conf Config) string {
         if jsonData != nil {
             for _, buildJson := range jsonData {
                 if jsonBuild, ok := buildJson.(map[string]interface{}); ok && jsonBuild["branch"].(string) == branch {
-                    log.Infof("Found latest build: %s", jsonBuild["branch"])
+                    log.Infof("Found latest build: %s with slug: %s", jsonBuild["branch"], jsonBuild["slug"])
 
                     latestBuildSlug = jsonBuild["slug"].(string)
                     break
@@ -146,11 +146,12 @@ func downloadArtifact(conf Config, build_slug string) (string, error) {
     }
 
     jsonData, _ := jsonMap["data"].([]interface{})
+    foundArtifact := false
     if jsonData != nil {
         for _, buildJson := range jsonData {
             if jsonArtifact, ok := buildJson.(map[string]interface{}); ok && strings.Contains(jsonArtifact["title"].(string), "buck-cache") {
+                foundArtifact = true
                 log.Infof("Found artifacts: %s", jsonArtifact["title"])
-
 
                 // Download the artifact
                 url := "https://api.bitrise.io/v0.1/apps/" + conf.CacheAppSlug + "/builds/" + build_slug + "/artifacts/" + jsonArtifact["slug"].(string)
@@ -196,6 +197,10 @@ func downloadArtifact(conf Config, build_slug string) (string, error) {
         }
     }
 
+    if !foundArtifact {
+        return "", fmt.Errorf("Artifact not found. You may haven't build or had cache before.")
+    }
+
     fmt.Println()
     log.Donef("Done downloading cache in: ", time.Since(downloadStartTime).String())
 
@@ -205,7 +210,7 @@ func downloadArtifact(conf Config, build_slug string) (string, error) {
 	}
 
 	if err := MergeCache(cacheArchivePath); err != nil {
-	    return "", fmt.Errorf("Error when merging split cache: %s", err)
+	    return "", fmt.Errorf("failed when merging split cache: %s", err)
 	}
 
     return cacheArchivePath, nil
