@@ -26,7 +26,7 @@ func defaultGitBranch() (string, error) {
 func MergeCache(to_path string) error {
     startTime := time.Now()
 
-    cmd := command.New("cat", "buck-cache.part* > " + to_path)
+    cmd := command.New("bash", "-c", "cat /tmp/buck-cache.part* > " + to_path)
     cmd.SetStdout(os.Stdout)
     cmd.SetStderr(os.Stderr)
     log.Debugf("$ " + cmd.PrintableCommandArgs())
