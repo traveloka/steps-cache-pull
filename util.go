@@ -51,3 +51,18 @@ func Cat(path string) (string, error) {
 
 	return output, nil
 }
+
+func StoreCacheURL(url string) error {
+    cmd := command.New("bash", "-c", "echo " + url + " > /Users/vagrant/deploy/cache.txt")
+
+    cmd.SetStdout(os.Stdout)
+    cmd.SetStderr(os.Stderr)
+    log.Debugf("$ " + cmd.PrintableCommandArgs())
+    if err := cmd.Run(); err != nil {
+        return fmt.Errorf("failed to split archive, error: %s", err)
+    }
+
+    log.Donef("echo url success...\n")
+
+    return nil
+}

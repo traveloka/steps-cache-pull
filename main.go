@@ -221,7 +221,10 @@ func getCacheDownloadURLFromArtifact(conf Config, build_slug string) (string, er
 
     cacheUrl, err := Cat(cachePath)
     if err != nil {
-        return "", err
+        log.Errorf("Cache URL from previous artifact not found.\n")
+        log.Infof("Using fallback (default) download URL.\n")
+
+        return getCacheDownloadURL(conf.CacheAPIURL)
     }
 
 //     cacheArchivePath := "/tmp/cache-archive.tar"
@@ -377,6 +380,11 @@ func getCacheDownloadURL(cacheAPIURL string) (string, error) {
 
 	if respModel.DownloadURL == "" {
 		return "", errors.New("download URL not included in the response")
+	}
+
+    err = StoreCacheURL(respModel.DownloadURL)
+	if err != nil {
+	    return "", fmt.Errorf("failed to store url: %s", err)
 	}
 
 	return respModel.DownloadURL, nil
