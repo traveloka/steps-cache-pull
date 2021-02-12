@@ -368,7 +368,7 @@ func getCacheDownloadURL(conf Config) (string, error) {
 		return "", errors.New("download URL not included in the response")
 	}
 
-    err = StoreCacheURL(respModel.DownloadURL)
+    err = StoreCacheURL(conf.CacheAPIURL)
 	if err != nil {
 	    return "", fmt.Errorf("failed to store url: %s", err)
 	}
