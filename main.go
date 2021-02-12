@@ -331,8 +331,8 @@ func performRequest(url string) (io.ReadCloser, error) {
 }
 
 // getCacheDownloadURL gets the given build's cache download URL.
-func getCacheDownloadURL(conf Config) (string, error) {
-	req, err := http.NewRequest("GET", conf.CacheAPIURL, nil)
+func getCacheDownloadURL(apiUrl string, conf Config) (string, error) {
+	req, err := http.NewRequest("GET", apiUrl, nil)
 	if err != nil {
 		return "", fmt.Errorf("failed to create request: %s", err)
 	}
@@ -368,7 +368,7 @@ func getCacheDownloadURL(conf Config) (string, error) {
 		return "", errors.New("download URL not included in the response")
 	}
 
-    err = StoreCacheURL(conf.CacheAPIURL)
+    err = StoreCacheURL(apiUrl)
 	if err != nil {
 	    return "", fmt.Errorf("failed to store url: %s", err)
 	}
@@ -436,9 +436,14 @@ func main() {
 	        buildSlug := getLatestBuildDefaultBranchArtifact(conf)
             log.Infof("Using cache from default branch in app: %s in build %s instead", conf.CacheAppSlug, buildSlug)
 
-            downloadURL, err = getCacheDownloadURLFromArtifact(conf, buildSlug)
+            cacheApiUrl, errCacheApiURL := getCacheDownloadURLFromArtifact(conf, buildSlug)
+            if errCacheApiURL != nil {
+                failf("Failed to get cache api url: %s", err)
+            }
+
+            downloadURL, err = getCacheDownloadURL(cacheApiUrl, conf)
         } else {
-            downloadURL, err = getCacheDownloadURL(conf)
+            downloadURL, err = getCacheDownloadURL(conf.CacheAPIURL, conf)
         }
 
 		if err != nil {
