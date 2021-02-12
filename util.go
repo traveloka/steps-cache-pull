@@ -53,9 +53,16 @@ func Cat(path string) (string, error) {
 }
 
 func StoreCacheURL(url string) error {
-    cmd := command.New("bash", "-c", "echo " + url + " > /Users/vagrant/deploy/cache.txt")
+    cmd := command.New("echo", url)
 
-    cmd.SetStdout(os.Stdout)
+    cacheFile, err := os.Create("/Users/vagrant/deploy/cache.txt")
+    if err != nil {
+        return fmt.Errorf("failed to generate new cache file, error: %s", err)
+    }
+
+    defer cacheFile.Close()
+
+    cmd.SetStdout(cacheFile)
     cmd.SetStderr(os.Stderr)
     log.Debugf("$ " + cmd.PrintableCommandArgs())
     if err := cmd.Run(); err != nil {
