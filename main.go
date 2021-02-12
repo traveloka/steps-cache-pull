@@ -165,6 +165,8 @@ func getCacheDownloadURLFromArtifact(conf Config, build_slug string) (string, er
 
                 defer res.Body.Close()
 
+                data, _ := ioutil.ReadAll(res.Body)
+
             	jsonMap := make(map[string]interface{})
                 errArtifact = json.Unmarshal([]byte(string(data)), &jsonMap)
                 if errArtifact != nil {
